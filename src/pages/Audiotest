@@ -1,0 +1,181 @@
+import React, { useRef, useState } from 'react';
+
+function AudioRecorder() {
+  const [recording, setRecording] = useState(false);
+  const [audioUrl, setAudioUrl] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const canvasRef = useRef(null);
+  const animationRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const sourceRef = useRef(null);
+  const streamRef = useRef(null);
+
+  const drawWaveform = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const canvasCtx = canvas.getContext("2d");
+    const analyser = analyserRef.current;
+    if (!analyser) return;
+
+    console.log("Analyser fftSize:", analyser.fftSize);
+    const bufferLength = analyser.frequencyBinCount; // half of fftSize
+    const dataArray = new Uint8Array(bufferLength);
+
+    const draw = () => {
+      animationRef.current = requestAnimationFrame(draw);
+      analyser.getByteTimeDomainData(dataArray);
+
+      // Clear the canvas
+      canvasCtx.fillStyle = "rgb(200, 200, 200)";
+      canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw the waveform.
+      canvasCtx.lineWidth = 2;
+      canvasCtx.strokeStyle = "rgb(0, 0, 0)";
+      canvasCtx.beginPath();
+
+      const sliceWidth = canvas.width / bufferLength;
+      let x = 0;
+
+      for (let i = 0; i < bufferLength; i++) {
+        // dataArray[i] is in [0, 255]. Subtract 128 so it centers at zero and normalize.
+        const v = (dataArray[i] - 128) / 128;
+        const y = canvas.height / 2 + v * (canvas.height / 2);
+
+        if (i === 0) {
+          canvasCtx.moveTo(x, y);
+        } else {
+          canvasCtx.lineTo(x, y);
+        }
+        x += sliceWidth;
+      }
+      canvasCtx.lineTo(canvas.width, canvas.height / 2);
+      canvasCtx.stroke();
+    };
+
+    draw();
+  };
+
+  const startRecording = async () => {
+    try {
+      // Clear previous recording (if any)
+      setAudioUrl(null);
+      audioChunksRef.current = [];
+
+      // Request the microphone audio stream.
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+
+      // Initialize the Web Audio context and set up the analyser node.
+      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      const audioContext = audioContextRef.current;
+      analyserRef.current = audioContext.createAnalyser();
+      analyserRef.current.fftSize = 2048;
+
+      // Create a source from the stream and connect it to the analyser.
+      sourceRef.current = audioContext.createMediaStreamSource(stream);
+      sourceRef.current.connect(analyserRef.current);
+
+      // Begin drawing the waveform on the canvas.
+      drawWaveform();
+
+      // Set up the MediaRecorder.
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        setIsProcessing(true);
+        // Create the Blob from recorded chunks.
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/wav" });
+        const url = URL.createObjectURL(audioBlob);
+
+        // Create a temporary Audio element to wait for metadata and full load.
+        const tempAudio = new Audio();
+        tempAudio.src = url;
+        tempAudio.preload = "auto";
+        tempAudio.addEventListener("loadedmetadata", () => {
+          // Use a small delay to ensure the browser has fully determined duration
+          setTimeout(() => {
+            setAudioUrl(url);
+            setIsProcessing(false);
+          }, 1000); // Delay of 1 second (adjust if needed)
+        }, { once: true });
+      };
+
+      mediaRecorder.start();
+      setRecording(true);
+    } catch (error) {
+      console.error("Error accessing microphone:", error);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      setRecording(false);
+      mediaRecorderRef.current = null;
+    }
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+  };
+
+  // Re-recording: clear any previous audio URL and start a new recording.
+  const reRecord = () => {
+    if (audioUrl) {
+      URL.revokeObjectURL(audioUrl);
+    }
+    setAudioUrl(null);
+    startRecording();
+  };
+
+  return (
+    <div>
+      <h2>Audio Recorder with Waveform</h2>
+      {recording && (
+        <div>
+          <canvas
+            ref={canvasRef}
+            width="600"
+            height="200"
+            style={{ border: "1px solid #000", marginTop: "20px" }}
+          />
+        </div>
+      )}
+      {(!isProcessing && !audioUrl) && (
+        <button onClick={recording ? stopRecording : startRecording}>
+          {recording ? "Stop Recording" : "Start Recording"}
+        </button>
+      )}
+      {isProcessing && <p>Processing your audio, please wait...</p>}
+      {audioUrl && !isProcessing && (
+        <div>
+          <h3>Recorded Audio:</h3>
+          <audio src={audioUrl} controls />
+          <div style={{ marginTop: '10px' }}>
+            <button onClick={reRecord}>Re-record</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default AudioRecorder;
