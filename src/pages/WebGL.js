@@ -9,7 +9,7 @@ function WebGL() {
         width="100%"
         height="100%"
         style={{ border: 'none' }}
-        sandbox="allow-scripts allow-same-origin allow-fullscreen allow-modals allow-popups"
+        // sandbox="allow-scripts allow-same-origin allow-fullscreen allow-modals allow-popups"
       >
       </iframe>
     </div>
