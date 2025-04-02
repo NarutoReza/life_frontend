@@ -4,11 +4,12 @@ function WebGL() {
   return (
     <div style={{ width: '100%', height: '600px' }}>
       <iframe
-        src="/webgl.html"  // Make sure this path is correct relative to public
+        src="/webgl.html"
         title="WebGL Viewer"
         width="100%"
         height="100%"
         style={{ border: 'none' }}
+        sandbox="allow-scripts allow-same-origin allow-fullscreen allow-modals allow-popups"
       >
       </iframe>
     </div>

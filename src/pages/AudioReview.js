@@ -35,7 +35,6 @@ function AudioReview() {
     setAudioFileStatus('Loading...');
     setAudioFile(null);
     try {
-      // Fetch the audio file as a blob from your server.
       const res = await axios.post(
         `${process.env.REACT_APP_BACKEND_URL}api/audio/get-audio`,
         { name: name },
@@ -43,10 +42,8 @@ function AudioReview() {
       );
       const blob = res.data;
   
-      // Use FileReader to convert the blob to a Data URL
       const reader = new FileReader();
       reader.onloadend = () => {
-        // reader.result contains the complete data URL with the full audio file.
         setAudioFile(reader.result);
         setAudioFileStatus('');
       };

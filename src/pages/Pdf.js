@@ -41,38 +41,30 @@ function Pdf() {
       }
 
       const existingPdfBytes = await pdfBlob.arrayBuffer();
-      // Load the original PDF document using pdf-lib
       const originalPdfDoc = await PDFDocument.load(existingPdfBytes);
-      // Create a new PDF document
       const newPdfDoc = await PDFDocument.create();
 
-      // Convert the page number from string to zero-indexed number
       const pageIndex = parseInt(pageNumber, 10) - 1;
       if (pageIndex < 0 || pageIndex >= originalPdfDoc.getPageCount()) {
         toast.warning("Invalid page number");
         return;
       }
 
-      // Copy the specified page from the original PDF
       const [copiedPage] = await newPdfDoc.copyPages(originalPdfDoc, [pageIndex]);
       if (!copiedPage) {
         throw new Error("Requested page does not exist");
       }
 
-      // Add the copied page to the new PDF document
       newPdfDoc.addPage(copiedPage);
 
-      // Save the new PDF document
       const pdfBytes = await newPdfDoc.save();
-      // Create a new Blob from the saved PDF bytes
       const newBlob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(newBlob);
 
-      // Create a temporary link element and trigger the download
       const a = document.createElement('a');
       a.href = url;
       a.download = `pdf-page-${pageNumber}.pdf`;
-      document.body.appendChild(a); // Needed for Firefox
+      document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
@@ -81,7 +73,6 @@ function Pdf() {
       toast.error("Could not download the specified page.");
     }
   };
-
 
   return (
     <div>

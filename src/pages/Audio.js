@@ -20,15 +20,12 @@ function AudioRecorder() {
 
   const startRecording = async () => {
     try {
-      // Clear previous recording
       setAudioUrl(null);
       audioChunksRef.current = [];
 
-      // Request microphone access
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      // Set up MediaRecorder for the stream
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
 
@@ -40,18 +37,15 @@ function AudioRecorder() {
 
       mediaRecorder.onstop = () => {
         setIsProcessing(true);
-        // Create a Blob from the audio chunks
         const audioBlob = new Blob(audioChunksRef.current, { type: "audio/wav" });
         const url = URL.createObjectURL(audioBlob);
 
-        // Create a temporary Audio element to load metadata
         const tempAudio = new Audio();
         tempAudio.src = url;
         tempAudio.preload = "auto";
         tempAudio.addEventListener(
           "canplaythrough",
           () => {
-            // Add a short delay to ensure the audio is fully processed
             setTimeout(() => {
               setAudioUrl(url);
               setAudioFile(audioBlob);
