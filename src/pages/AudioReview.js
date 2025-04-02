@@ -18,7 +18,7 @@ function AudioReview() {
 
   const getAllAudios = async () => {
     axios
-      .get(`http://localhost:8080/api/audio/list`)
+      .get(`${process.env.REACT_APP_BACKEND_URL}api/audio/list`)
       .then(res => {
         setAudioList(res.data.data);
       })
@@ -37,7 +37,7 @@ function AudioReview() {
     try {
       // Fetch the audio file as a blob from your server.
       const res = await axios.post(
-        'http://localhost:8080/api/audio/get-audio',
+        `${process.env.REACT_APP_BACKEND_URL}api/audio/get-audio`,
         { name: name },
         { responseType: 'blob' }
       );
@@ -64,7 +64,7 @@ function AudioReview() {
     e.preventDefault();
     setIsLoading(true);
     axios
-      .post('http://localhost:8080/api/audio/edit-audio', {name: selectedAudio.name, audioId: selectedAudio._id})
+      .post(`${process.env.REACT_APP_BACKEND_URL}api/audio/edit-audio`, {name: selectedAudio.name, audioId: selectedAudio._id})
       .then((res) => {
         toast.success(res.data.message);
         getAllAudios();
@@ -81,7 +81,7 @@ function AudioReview() {
   const handleDeleteAudio = async(e) => {
     e.preventDefault();
     axios
-      .post('http://localhost:8080/api/audio/delete-audio', {audioId: selectedAudio._id})
+      .post(`${process.env.REACT_APP_BACKEND_URL}api/audio/delete-audio`, {audioId: selectedAudio._id})
       .then((res) => {
         toast.success(res.data.message);
         getAllAudios();

@@ -8,7 +8,7 @@ const Video = () => {
 
   const getVideo = async () => {
     axios
-      .post(`http://localhost:8080/api/video/get-video`, {name: "video"}, {responseType: 'blob'})
+      .post(`${process.env.REACT_APP_BACKEND_URL}api/video/get-video`, {name: "video"}, {responseType: 'blob'})
       .then((res) => {
         const url = URL.createObjectURL(res.data);
         setVideo(url);

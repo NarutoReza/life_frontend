@@ -106,7 +106,7 @@ function AudioRecorder() {
     formData.append('file', audioFile);
 
     axios
-      .post('http://localhost:8080/api/audio/add-audio', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+      .post(`${process.env.REACT_APP_BACKEND_URL}api/audio/add-audio`, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
       .then(res => {
         toast.success(res.data.message);
         setAudioUrl(null);
